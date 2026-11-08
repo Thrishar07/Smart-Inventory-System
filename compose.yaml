@@ -1,0 +1,48 @@
+services:
+
+  db:
+    image: postgres:18
+    container_name: smart-inventory-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: .
+    container_name: smart-inventory-backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DB_HOST: db
+      DB_PORT: "5432"
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  dashboard:
+    build: .
+    container_name: smart-inventory-dashboard
+    restart: unless-stopped
+    environment:
+      API_URL: http://backend:8000
+    command: streamlit run dashboard/app.py --server.address=0.0.0.0 --server.port=8501
+    ports:
+      - "8501:8501"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:

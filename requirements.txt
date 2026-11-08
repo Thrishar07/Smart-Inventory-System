@@ -5,3 +5,11 @@ python-dotenv
 pytest 
 httpx
 ruff 
+psycopg[binary]
+pandas 
+numpy 
+scikit-learn 
+joblib
+streamlit 
+plotly
+requests
